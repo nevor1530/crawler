@@ -1,8 +1,4 @@
 # coding: utf-8
-"""
-在droplet基础上改进，新设计一套模板
-"""
-
 import time
 import hashlib
 import urllib
@@ -195,21 +191,8 @@ def make_item(response, item):
     rel_url = response.meta.get(META_URL)
     if rel_url:
         response = response.replace(url=rel_url)
-
-    item[ITEM_ID] = gen_id(response.url)
     item[URL] = response.url
-    item[TYPE] = 'main'    # TODO 兼容原版本数据，留下这个字段，暂时固定为main
-
-    if not item.get('content'):  # content字段为空：配置的模板没有在response.body上命中
-        log.msg("item content missed. ", logLevel=log.WARNING)
-        # item['body'] = ''.join(response.xpath('//body').extract())
-
     return item
-
-
-def gen_id(url):
-    url += str(time.time())
-    return hashlib.md5(url).hexdigest()
 
 
 class ZeusItem(Item):

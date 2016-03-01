@@ -54,35 +54,33 @@
                 // optional, 用于页面循环深入抓取
                 "name": "extractor name 1",
 
+                // Optional
                 "extends": "extractor name",
 
-                // condition, 如果condition解析值为false，则不执行这个extractor
+                // Optional, 如果condition解析值为false，则不执行这个extractor
                 "condition": [
                     ["xpath", "//div"]
                 ],
 
-                // 是否不再执行后续的extract，默认为false
-                "last": true,
-
-                // 需要继续访问的urls
+                // Optional, 需要继续访问的urls
                 "urls": [
                     ["xpath", "//div/a/@href"],
                     ["re", "/\\d+\\.html"]
                 ],
 
+                // Optional
                 "extrators": [{
-                    "name": "extractor name",
-                    // optional, 使用哪个模板抓取数据
-                    "entity": "entity name1",
-                    // 比如还要抓取相关阅读列表里的文章
-                    "urls": ["xpath", "//div/a/@href"],
-                    "extrators": ["extractor name"]
-                }]
+                    // 下一级配置
+                }],
+
+                // optional, 使用哪个模板抓取数据
+                "entity": "entity name",
+
+                // Optional 如果当前extractor符合条件，且不再处理后面的extractors，默认为false
+                "last": true
             },
             {
-                "name": "page1",
-                "urls": [],
-                "extrators": ["extractor name 1", "page1"]
+                // 第二个extractor
             }
         ]
     }
