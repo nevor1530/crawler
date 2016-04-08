@@ -136,11 +136,11 @@ if __name__ == '__main__':
     import os
     PARENT_DIR = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(os.path.abspath(PARENT_DIR + '/..'))
-    from logging_conf import get_logging_conf_json
+    #from logging_conf import get_logging_conf_json
     from scrapy.http import HtmlResponse
-    from crawlers.ycrawler.zeus_parsers.jsonex import load as jload
+    from zeus_parsers.jsonex import load as jload
 
-    logging.config.dictConfig(get_logging_conf_json('', debug=True))
+    #logging.config.dictConfig(get_logging_conf_json('', debug=True))
 
     def usage():
         print 'usage:'
