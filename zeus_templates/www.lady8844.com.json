@@ -48,26 +48,12 @@
                 ],
                 "extractors": [{
                     "entity": "entity1"
-                }]
-            },
-            {
-                "name": "page_1",
-                "condition": [
-                    ["meta", "page"],
-                    ["eval", "%d <= 3"]
-                ],
-                "urls": ["link", "//a[@class='page-next']"],
-                "extractors": ["extractor_1", "page_1"],
-                "meta": {
-                    "page": [
-                        ["meta", "page"],
-                        ["eval", "%d + 1"]
-                    ]
+                }],
+                "pager": {
+                    "next_url": ["link", "//a[@class='page-next']"],
+                    "max_pages": 3
                 }
             }
-        ],
-        "meta": {
-            "page": ["const", 1]
-        }
+        ]
     }
 }

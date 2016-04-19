@@ -12,6 +12,7 @@ class Extractor():
         self.condition_procedures = None
         self.meta_procedures = None
         self.last = False
+        self.pager = None
 
 
 class ExtratorParser():
@@ -54,6 +55,7 @@ class ExtratorParser():
             extractor.entity = base_extractor.entity
             extractor.condition_procedures = base_extractor.condition_procedures
             extractor.last = base_extractor.last
+            extractor.pager = base_extractor.pager
 
         if 'condition' in conf:
             extractor.condition_procedures = parse_procedures(conf['condition'])
@@ -77,6 +79,10 @@ class ExtratorParser():
 
         if 'last' in conf:
             extractor.last = conf['last']
+
+        if 'pager' in conf:
+            extractor.pager = conf['pager']
+            extractor.pager['next_url'] = parse_procedures(extractor.pager['next_url'])
 
         return extractor
 
