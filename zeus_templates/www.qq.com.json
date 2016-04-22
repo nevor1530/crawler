@@ -63,7 +63,7 @@
                 ],
                 "extractors": [
                     {
-                        "condition": ["xpath", "//div[@class='gallery']|//div[@id='picWrap']"],
+                        "condition": ["xpath", "//div[@id='picWrap']"],
                         "last": true
                     },
                     // gallery
@@ -73,13 +73,13 @@
                         "entity": "gallery_entity",
                         "cur_webdriver": {
                             "name": "selenium_grid",
-                            "module": "sample"
+                            "module": "www_qq_com_star"
                         }
                     },
                     {
                         // 根据正文判断是否采用这个模板
-                        "condition": ["xpath", "//div[@class='Cnt-Main-Article-QQ']"],
-                        "entity": "entity1"
+                        "condition": ["xpath", "//div[@class='Cnt-Main-Article-QQ']"]
+                        //"entity": "entity1"
                     }
                 ]
             }

@@ -4,10 +4,9 @@ import hashlib
 import urllib
 import logging
 
-from scrapy import log
 from scrapy.item import Item
 from scrapy.http import Request
-from scrapy.spider import Spider
+from scrapy.spiders import Spider
 from scrapy.utils.response import get_base_url
 from urlparse import urljoin
 
@@ -36,7 +35,7 @@ class ZeusSpider(Spider):
         elif config:
             jconfig = jsonloads(config)
         else:
-            self.log('config_file or config is expected', level=log.CRITICAL)
+            self.log('config_file or config is expected', level=logging.CRITICAL)
             raise Exception('config_file or config is expected')
 
         self.template = config_parse(jconfig)
@@ -61,7 +60,7 @@ class ZeusSpider(Spider):
                     for key, procedures in crawler.meta_procedures.items():
                         vars[key] = procedures.extract(None)
                     meta[META_VARS] = vars
-                self.log('crawl %s' % url, level=log.INFO)
+                self.log('crawl %s' % url, level=logging.INFO)
                 yield Request(url=url, meta=meta, callback=self.traversal)
 
     def traversal(self, response):
@@ -76,7 +75,7 @@ class ZeusSpider(Spider):
         for extractor in extractors:
             # 先判断condition
             if extractor.condition_procedures and not extractor.condition_procedures.extract(response, response=response):
-                self.log('condition fell in %s' % response.url, level=log.DEBUG)
+                self.log('condition fell in %s' % response.url, level=logging.DEBUG)
                 continue
 
             # 判断是否需要webdriver和是否用了webdriver，如果需要，但没用，则重新请求一次
@@ -84,7 +83,8 @@ class ZeusSpider(Spider):
                 next_meta = meta.copy()
                 next_meta['webdriver'] = extractor.cur_webdriver
                 next_meta['META_EXTRACTORS'] = [extractor]
-                yield Request(url=response.url, meta=next_meta, callback=self.traversal)
+                self.log('re-request the page %s' % response.url, level=logging.DEBUG)
+                yield Request(url=response.url, meta=next_meta, callback=self.traversal, dont_filter=True)
             else:
                 # 如果有entity配置，则先解析item
                 # 逻辑上支持entity传递和分页，但不能同时支持传递和分页，如果有分页，则不能传递
@@ -195,7 +195,7 @@ class ZeusSpider(Spider):
         """
         for key, value in item.items():
             if value is None:
-                self.log('attr parse empty or error: entity "%s" attr "%s" in "%s"' % (entity.name, key, url), level=log.WARNING)
+                self.log('attr parse empty or error: entity "%s" attr "%s" in "%s"' % (entity.name, key, url), level=logging.WARNING)
 
 
 def make_item(response, item):
@@ -220,4 +220,8 @@ class ZeusItem(Item):
 
 
 if __name__ == '__main__':
-    print ROOT_DIR
+    from scrapy.crawler import CrawlerProcess
+    from scrapy.utils.project import get_project_settings
+    process = CrawlerProcess(get_project_settings())
+    process.crawl(ZeusSpider)
+    process.start()

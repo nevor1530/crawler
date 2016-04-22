@@ -7,7 +7,7 @@ import json
 
 from scrapy.http import Response
 from scrapy.selector import Selector
-from scrapy.contrib.linkextractors.lxmlhtml import LxmlLinkExtractor
+from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from scrapy.utils.response import get_base_url
 from jsonpath_rw import parse as jsonpath_parse
 

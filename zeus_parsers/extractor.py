@@ -91,7 +91,7 @@ class ExtratorParser():
             extractor.webdriver = conf['webdriver']
 
         if 'cur_webdriver' in conf:
-            extractor.cur_webdriver = conf['webdriver']
+            extractor.cur_webdriver = conf['cur_webdriver']
 
         return extractor
 

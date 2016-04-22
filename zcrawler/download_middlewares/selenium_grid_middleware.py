@@ -8,12 +8,16 @@ from scrapy.xlib.pydispatch import dispatcher
 from scrapy.exceptions import IgnoreRequest
 
 import logging
+import importlib
 
 import os
 import sys
 PARENT_DIR = os.path.dirname(os.path.abspath(__file__))
-ROOT_DIR = os.path.abspath(PARENT_DIR + '/../')
+ROOT_DIR = os.path.abspath(PARENT_DIR + '/../../')
 sys.path.append(ROOT_DIR)
+
+
+logger = logging.getLogger(__name__)
 
 
 def check_selenium_service(command_executor, capability):
@@ -21,13 +25,12 @@ def check_selenium_service(command_executor, capability):
     try:
         browser.get('http://www.baidu.com')
         if len(browser.page_source) > 0:
-            logging.info('check remote webdriver (%s) capability (%s) successfully' % (command_executor, capability['browserName']))
+            logger.info('check remote webdriver (%s) capability (%s) successfully' % (command_executor, capability['browserName']))
             return True
         else:
-            logging.info('check remote webdriver (%s) capability (%s) failed' % (command_executor, capability['browserName']))
+            logger.warning('check remote webdriver (%s) capability (%s) failed' % (command_executor, capability['browserName']))
             return False
     finally:
-        browser.close()
         browser.quit()
 
 
@@ -52,7 +55,7 @@ class SeleniumGridMiddleware(object):
         elif capability == 'phantomjs':
             self.capability = DesiredCapabilities.PHANTOMJS
         else:
-            logging.warning('unknow capability "%s"' % capability)
+            logger.warning('unknow capability "%s"' % capability)
             self.error = True
 
     @classmethod
@@ -63,7 +66,7 @@ class SeleniumGridMiddleware(object):
         return cls(host, port, capability)
 
     def process_request(self, request, spider):
-        if hasattr(request, 'meta') and 'webdriver' in request.meta and request.meta['webdriver'] == 'selenium_grid':
+        if hasattr(request, 'meta') and 'webdriver' in request.meta and request.meta['webdriver'].get('name', '') == 'selenium_grid':
             driver = self.get_driver()
             if driver:
                 try:
@@ -71,7 +74,7 @@ class SeleniumGridMiddleware(object):
                     action = meta.get('module', None)
                     if not action:
                         raise IgnoreRequest('selenium grid request must have "act" item in meta')
-                    m = __import__('zeus_actions.' + action)
+                    m = importlib.import_module('zeus_actions.'+action)
                     f = getattr(m, 'act')
                     if f is None or not hasattr(f, '__call__'):
                         raise IgnoreRequest('module %s must implement "act" method' % action)
@@ -80,7 +83,8 @@ class SeleniumGridMiddleware(object):
                     body = self.driver.page_source
                     return HtmlResponse(url=request.url, body=body, request=request, encoding='utf-8')
                 finally:
-                    self.driver.close()
+                    #self.driver.close()
+                    pass
 
     def get_driver(self):
         if self.error:
@@ -98,11 +102,12 @@ class SeleniumGridMiddleware(object):
     def spider_closed(self):
         if self.driver:
             self.driver.quit()
-        logging.info("selenium driver quit.")
+        logger.info("selenium driver quit.")
 
 
 if __name__ == '__main__':
     # check_selenium_service('http://127.0.0.1:4444/wd/hub')
+    print ROOT_DIR
 
     def test_action(my_driver):
         my_driver.execute_script("window.scrollTo(0, document.body.offsetHeight);")
