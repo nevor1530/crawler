@@ -13,6 +13,8 @@ class Extractor():
         self.meta_procedures = None
         self.last = False
         self.pager = None
+        self.webdriver = None
+        self.cur_webdriver = None
 
 
 class ExtratorParser():
@@ -56,6 +58,8 @@ class ExtratorParser():
             extractor.condition_procedures = base_extractor.condition_procedures
             extractor.last = base_extractor.last
             extractor.pager = base_extractor.pager
+            extractor.webdriver = base_extractor.webdriver
+            extractor.cur_webdriver = base_extractor.cur_webdriver
 
         if 'condition' in conf:
             extractor.condition_procedures = parse_procedures(conf['condition'])
@@ -83,6 +87,11 @@ class ExtratorParser():
         if 'pager' in conf:
             extractor.pager = conf['pager']
             extractor.pager['next_url'] = parse_procedures(extractor.pager['next_url'])
+        if 'webdriver' in conf:
+            extractor.webdriver = conf['webdriver']
+
+        if 'cur_webdriver' in conf:
+            extractor.cur_webdriver = conf['webdriver']
 
         return extractor
 

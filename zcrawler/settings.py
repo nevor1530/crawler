@@ -18,3 +18,12 @@ NEWSPIDER_MODULE = 'zcrawler.spiders'
 
 #LOG_ENABLED = False
 LOG_LEVEL = 'DEBUG'
+
+
+DOWNLOADER_MIDDLEWARES = {
+    'zcrawler.download_middlewares.selenium_grid_middleware.SeleniumGridMiddleware': 101
+}
+
+SELENIUM_GRID_HOST = '127.0.0.1'
+SELENIUM_GRID_PORT = '4444'
+SELENIUM_GRID_CAPABILITY = 'firefox'

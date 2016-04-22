@@ -39,6 +39,14 @@
                     ["json", "Name"]
                 ]
             }
+        },
+        {
+            "name": "gallery_entity",
+            "attrs": {
+                "image_urls": [
+                    ["xpath", "//div[@id='galleryList']//descendant::img//@src", true]
+                ]
+            }
         }
     ],
 
@@ -57,6 +65,16 @@
                     {
                         "condition": ["xpath", "//div[@class='gallery']|//div[@id='picWrap']"],
                         "last": true
+                    },
+                    // gallery
+                    {
+                        "condition": ["xpath", "//div[@id='galleryList']"],
+                        "last": true,
+                        "entity": "gallery_entity",
+                        "cur_webdriver": {
+                            "name": "selenium_grid",
+                            "module": "sample"
+                        }
                     },
                     {
                         // 根据正文判断是否采用这个模板

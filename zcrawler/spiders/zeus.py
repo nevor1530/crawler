@@ -79,50 +79,56 @@ class ZeusSpider(Spider):
                 self.log('condition fell in %s' % response.url, level=log.DEBUG)
                 continue
 
-            # 如果有entity配置，则先解析item
-            # 逻辑上支持entity传递和分页，但不能同时支持传递和分页，如果有分页，则不能传递
-            item = None
-            if extractor.entity:
-                item = self.parse_entity(extractor.entity, response, response=response, url=response.url)
-                if extractor.entity.pager:
-                    # 正文分页
-                    urls = extractor.entity.pager['next_url'].extract(response, response=response)
+            # 判断是否需要webdriver和是否用了webdriver，如果需要，但没用，则重新请求一次
+            if extractor.cur_webdriver and 'webdriver' not in meta:
+                next_meta = meta.copy()
+                next_meta['webdriver'] = extractor.cur_webdriver
+                next_meta['META_EXTRACTORS'] = [extractor]
+                yield Request(url=response.url, meta=next_meta, callback=self.traversal)
+            else:
+                # 如果有entity配置，则先解析item
+                # 逻辑上支持entity传递和分页，但不能同时支持传递和分页，如果有分页，则不能传递
+                item = None
+                if extractor.entity:
+                    item = self.parse_entity(extractor.entity, response, response=response, url=response.url)
+                    if extractor.entity.pager:
+                        # 正文分页
+                        urls = extractor.entity.pager['next_url'].extract(response, response=response)
+                        if urls:
+                            next_meta = meta.copy()
+                            next_meta['META_ENTITY'] = item
+                            next_meta['META_URL'] = response.url
+                            yield Request(url=urls[0], meta=next_meta, callback=self.pages_entity)
+                            continue
+
+                # 如果有需要合并的entity，则在此合并
+                if pre_item:
+                    item.update(pre_item)
+
+                # 如果有下一级，则当前解析的entity不进入item pipeline，传给下一级
+                if extractor.urls_procedures:
+                    urls = extractor.urls_procedures.extract(response, response=response)
                     if urls:
                         next_meta = {
-                            META_ENTRY_PAGE: entry_page,
-                            META_ENTITY: item,
-                            META_ENTITY_CONFIG: extractor.entity,
-                            META_URL: response.url
+                            META_EXTRACTORS: extractor.extractors,
+                            META_ENTRY_PAGE: entry_page
                         }
-                        yield Request(url=urls[0], meta=next_meta, callback=self.pages_entity)
-                        continue
-
-            # 如果有需要合并的entity，则在此合并
-            if pre_item:
-                item.update(pre_item)
-
-            # 如果有下一级，则当前解析的entity不进入item pipeline，传给下一级
-            if extractor.urls_procedures:
-                urls = extractor.urls_procedures.extract(response, response=response)
-                if urls:
-                    next_meta = {
-                        META_EXTRACTORS: extractor.extractors,
-                        META_ENTRY_PAGE: entry_page
-                    }
-                    # 如果当前有解析entity，则传到下一级
-                    if item:
-                        next_meta[META_ITEM] = item
-                    if extractor.meta_procedures:
-                        vars = dict()
-                        for key, procedures in extractor.meta_procedures.items():
-                            vars[key] = procedures.extract(response, response=response)
-                        next_meta[META_VARS] = vars
-                    for url in urls:
-                        yield Request(url=url, meta=next_meta, callback=self.traversal)
-            elif item:
-                # 补充id, url等属性
-                item = make_item(response, item)
-                yield ZeusItem(item, self, entry_page=entry_page)
+                        # 如果当前有解析entity，则传到下一级
+                        if item:
+                            next_meta[META_ITEM] = item
+                        if extractor.webdriver:
+                            next_meta['webdriver'] = extractor.webdriver
+                        if extractor.meta_procedures:
+                            vars = dict()
+                            for key, procedures in extractor.meta_procedures.items():
+                                vars[key] = procedures.extract(response, response=response)
+                            next_meta[META_VARS] = vars
+                        for url in urls:
+                            yield Request(url=url, meta=next_meta, callback=self.traversal)
+                elif item:
+                    # 补充id, url等属性
+                    item = make_item(response, item)
+                    yield ZeusItem(item, self, entry_page=entry_page)
 
             # 如果需要翻页，则带上当前extractor配置，传给下一页 
             if extractor.pager:
@@ -151,7 +157,6 @@ class ZeusSpider(Spider):
         entity = meta[META_ENTITY]
         entity_config = meta[META_ENTITY_CONFIG]
         entry_page = meta[META_ENTRY_PAGE]
-        origin_url = meta[META_URL]
 
         pager_attrs = entity_config.pager['pager_attrs']
         attrs = pager_attrs.keys()
@@ -172,13 +177,7 @@ class ZeusSpider(Spider):
 
         urls = entity_config.pager['next_url'].extract(response, response=response)
         if urls:
-            next_meta = {
-                META_ENTRY_PAGE: entry_page,
-                META_ENTITY: entity,
-                META_ENTITY_CONFIG: entity_config,
-                META_URL: origin_url
-            }
-            yield Request(url=urls[0], meta=next_meta, callback=self.pages_entity)
+            yield Request(url=urls[0], meta=meta, callback=self.pages_entity)
         else:
             item = make_item(response, entity)
             yield ZeusItem(item, self, entry_page=entry_page)
