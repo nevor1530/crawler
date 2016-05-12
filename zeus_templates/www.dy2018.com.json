@@ -1,0 +1,56 @@
+{
+    "name": "电影天堂",
+    "entities": [
+        {
+            "name": "entity1",
+            "attrs": {
+                "name": ["xpath", "//div[@class='title_all']/h1/text()"],
+                "year": [
+                    ["xpath", "//p[contains(., '年　　代')]/text()"],
+                    ["substr", 6]
+                ],
+                "country": [
+                    ["xpath", "//p[contains(., '国　　家')]/text()"],
+                    ["substr", 6]
+                ],
+                "type": [
+                    ["xpath", "//div[@class='position']/span[2]/descendant::text()", true],
+                    ["join", ""],
+                    ["substr", 3]
+                ],
+                "language": [
+                    ["xpath", "//p[contains(., '语　　言')]/text()"],
+                    ["substr", 6]
+                ],
+                "caption": [
+                    ["xpath", "//p[contains(., '字　　幕')]/text()"],
+                    ["substr", 6]
+                ],
+                "rank": ["xpath", "//strong[@class='rank']//text()"],
+                "url": ["URL"]
+            }
+        }
+    ],
+
+    "crawlers": {
+        "sites": [
+            "http://www.dy2018.com/html/gndy/dyzz/"
+        ],
+
+        "extractors": [
+            {
+                "name": "extractor_1",
+                "urls": [
+                    ["link", "//a[@class='ulink']"]
+                ],
+                "extractors": [{
+                    "entity": "entity1"
+                }],
+                "pager": {
+                    "next_url": ["link", "//a[contains(., '下一页')]"]
+                    //"max_pages": 3
+                }
+            }
+        ]
+    }
+}
