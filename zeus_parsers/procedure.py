@@ -348,6 +348,14 @@ class JsonProcedure(BaseProcedure):
         return s
 
 
+class URLProcedure():
+    """
+    特珠Procedure，获取当前response的url
+    URL
+    """
+    def run(self, res, **kwargs):
+        return res.url
+
 procedure_map = {
     'const': ConstProcedure,
     'default': DefaultProcedure,
@@ -362,7 +370,8 @@ procedure_map = {
     'substr': SubstrProcedure,
     'time': TimeProcedure,
     'url_join': UrlJoinProcedure,
-    'xpath': XpathProcedure
+    'xpath': XpathProcedure,
+    'URL': URLProcedure
 }
 
 if __name__ == '__main__':
