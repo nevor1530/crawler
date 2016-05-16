@@ -82,7 +82,7 @@ class ZeusSpider(Spider):
             if extractor.cur_webdriver and 'webdriver' not in meta:
                 next_meta = meta.copy()
                 next_meta['webdriver'] = extractor.cur_webdriver
-                next_meta['META_EXTRACTORS'] = [extractor]
+                next_meta[META_EXTRACTORS] = [extractor]
                 self.log('re-request the page %s' % response.url, level=logging.DEBUG)
                 yield Request(url=response.url, meta=next_meta, callback=self.traversal, dont_filter=True)
             else:
@@ -96,8 +96,9 @@ class ZeusSpider(Spider):
                         urls = extractor.entity.pager['next_url'].extract(response, response=response)
                         if urls:
                             next_meta = meta.copy()
-                            next_meta['META_ENTITY'] = item
-                            next_meta['META_URL'] = response.url
+                            next_meta[META_ENTITY] = item
+                            next_meta[META_URL] = response.url
+                            next_meta[META_ENTITY_CONFIG] = extractor.entity
                             yield Request(url=urls[0], meta=next_meta, callback=self.pages_entity)
                             continue
 
