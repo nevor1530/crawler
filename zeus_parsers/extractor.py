@@ -87,6 +87,9 @@ class ExtratorParser():
         if 'pager' in conf:
             extractor.pager = conf['pager']
             extractor.pager['next_url'] = parse_procedures(extractor.pager['next_url'])
+            max_pages = conf['pager'].get('max_pages', None)
+            if max_pages:
+                extractor.pager['max_pages'] = int(max_pages)
         if 'webdriver' in conf:
             extractor.webdriver = conf['webdriver']
 

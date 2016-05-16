@@ -134,13 +134,14 @@ class ZeusSpider(Spider):
             # 如果需要翻页，则带上当前extractor配置，传给下一页 
             if extractor.pager:
                 e_pager = extractor.pager
-                if 'page' not in e_pager:
-                    e_pager['page'] = 1
-                if 'max_pages' not in e_pager or e_pager['page'] < e_pager['max_pages']:
-                    e_pager['page'] += 1
+                cur_page = meta.get(META_PAGE, 1)
+                if 'max_pages' not in e_pager or cur_page < e_pager['max_pages']:
+                    cur_page += 1
                     urls = e_pager['next_url'].extract(response, response=response)
                     if urls:
-                        yield Request(url=urls[0], meta=meta, callback=self.traversal)
+                        next_meta = meta.copy()
+                        next_meta[META_PAGE] = cur_page
+                        yield Request(url=urls[0], meta=next_meta, callback=self.traversal)
 
 
             # 不再执行后续的extractor

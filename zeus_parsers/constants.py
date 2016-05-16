@@ -15,6 +15,7 @@ META_ENTITY = 'meta_entity'                 # 正文分页中，传之前已解�
 META_ENTITY_CONFIG = 'meta_entity_config'   # 传entity的解析器
 META_ITEM = 'meta_item'
 META_URL = 'meta_url'
+META_PAGE = 'meta_page'
 
 SPIDER = '_spider'
 MEDIA_TYPE = 'media_type'
