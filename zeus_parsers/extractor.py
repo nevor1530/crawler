@@ -35,7 +35,7 @@ class ExtratorParser():
     def parse_extractor(self, conf, entity_map):
         if isinstance(conf, basestring):
             if conf not in self.all_extractors:
-                raise Exception('unkonw extractor %s' % conf['extends'])
+                raise Exception('unkonw extractor %s' % conf)
             return self.all_extractors[conf]
 
         extractor = Extractor()

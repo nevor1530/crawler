@@ -93,13 +93,14 @@ class ZeusSpider(Spider):
                     item = self.parse_entity(extractor.entity, response, response=response, url=response.url)
                     if extractor.entity.pager:
                         # 正文分页
-                        urls = extractor.entity.pager['next_url'].extract(response, response=response)
-                        if urls:
+                        url = extractor.entity.pager['next_url'].extract(response, response=response)
+                        url = first_url(url)
+                        if url:
                             next_meta = meta.copy()
                             next_meta[META_ENTITY] = item
                             next_meta[META_URL] = response.url
                             next_meta[META_ENTITY_CONFIG] = extractor.entity
-                            yield Request(url=urls[0], meta=next_meta, callback=self.pages_entity)
+                            yield Request(url=url, meta=next_meta, callback=self.pages_entity)
                             continue
 
                 # 如果有需要合并的entity，则在此合并
@@ -137,11 +138,12 @@ class ZeusSpider(Spider):
                 cur_page = meta.get(META_PAGE, 1)
                 if 'max_pages' not in e_pager or cur_page < e_pager['max_pages']:
                     cur_page += 1
-                    urls = e_pager['next_url'].extract(response, response=response)
-                    if urls:
+                    url = e_pager['next_url'].extract(response, response=response)
+                    url = first_url(url)
+                    if url:
                         next_meta = meta.copy()
                         next_meta[META_PAGE] = cur_page
-                        yield Request(url=urls[0], meta=next_meta, callback=self.traversal)
+                        yield Request(url=url, meta=next_meta, callback=self.traversal)
 
 
             # 不再执行后续的extractor
@@ -163,23 +165,30 @@ class ZeusSpider(Spider):
         pager_attrs = entity_config.pager['pager_attrs']
         attrs = pager_attrs.keys()
         new_entity = self.parse_entity(entity_config, response, response=response, url=response.url, attrs=attrs)
-        for key, type in pager_attrs.items():
-            if type == True:
+        for key, type_ in pager_attrs.items():
+            if type_ == True:
                 # 按数组合并，先判断原值是不是数组，不是的话，无转成数组
                 if not isinstance(entity[key], list):
                     entity[key] = [entity[key]]
                 if not isinstance(new_entity[key], list):
                     new_entity[key] = [new_entity[key]]
                 entity[key].extend(new_entity[key])
-            elif isinstance(type, basestring):
+            elif isinstance(type_, basestring):
                 # 字符串，join起来就行
-                entity[key] = type.join([entity[key], new_entity[key]])
+                # 处理一下有None的情况
+                if not entity[key]:
+                    entity[key] = new_entity[key]
+                elif not new_entity[key]:
+                    pass
+                else:
+                    entity[key] = type_.join([entity[key], new_entity[key]])
             else:
                 raise Exception('entity "%s" wrong "pager" config at field "%s"' % (entity.name, key))
 
-        urls = entity_config.pager['next_url'].extract(response, response=response)
-        if urls:
-            yield Request(url=urls[0], meta=meta, callback=self.pages_entity)
+        url = entity_config.pager['next_url'].extract(response, response=response)
+        url = first_url(url)
+        if url:
+            yield Request(url=url, meta=meta, callback=self.pages_entity)
         else:
             item = make_item(response, entity)
             yield ZeusItem(item, self, entry_page=entry_page)
@@ -198,6 +207,18 @@ class ZeusSpider(Spider):
         for key, value in item.items():
             if value is None:
                 self.log('attr parse empty or error: entity "%s" attr "%s" in "%s"' % (entity.name, key, url), level=logging.WARNING)
+
+
+def first_url(urls):
+    """
+    处理Procedures返回的地址，有的会返回数组，有的会返回字符串，这里提取出复用代码
+    """
+    if isinstance(urls, list):
+        if len(urls) > 0:
+            return urls[0]
+        return None
+    else:
+        return urls
 
 
 def make_item(response, item):

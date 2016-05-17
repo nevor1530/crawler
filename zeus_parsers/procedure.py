@@ -9,6 +9,7 @@ from scrapy.http import Response
 from scrapy.selector import Selector
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from scrapy.utils.response import get_base_url
+from scrapy.selector.unified import SelectorList
 from jsonpath_rw import parse as jsonpath_parse
 
 from constants import META_VARS
@@ -73,7 +74,7 @@ class XpathProcedure(BaseProcedure):
     selector false或无值返回extrator()后的结果, True返回SelectorList
 
     do输入
-    input string|
+    input string|Response|Selector
     """
     def __init__(self, *args):
         """
@@ -92,10 +93,51 @@ class XpathProcedure(BaseProcedure):
             self._return_selector = args[2]
 
     def do(self, input_, **kwargs):
-        if isinstance(input_, Response):
+        if isinstance(input_, Response) or isinstance(input_, SelectorList):
             res = input_.xpath(self._path)
         elif isinstance(input_, basestring):
             res = Selector(text=input_).xpath(self._path)
+        else:
+            raise Exception(__name__ + ' unknow type of argument' + str(type(input_)))
+
+        if not self._return_selector:
+            res = res.extract()
+            if not self._return_multi:
+                res = res[0] if res else None
+        return res
+
+
+class CssProcedure(BaseProcedure):
+    """
+    css选择器，参考http://www.w3school.com.cn/cssref/css_selectors.asp
+    css path [multi] [selector]
+    path 要解析的css选择参数
+    selector false或无值返回extrator()后的结果, True返回SelectorList
+
+    do输入
+    input string|Response|Seelctor
+    """
+    def __init__(self, *args):
+        """
+        :return: string|array|SelectorList
+        """
+        if len(args) < 1 or len(args) > 3:
+            raise Exception(__name__ + 'initialize arguments error')
+
+        self._path = args[0]
+        self._return_multi = False
+        if len(args) > 1 and args[1]:
+            self._return_multi = args[1]
+
+        self._return_selector = False
+        if len(args) > 2 and args[2]:
+            self._return_selector = args[2]
+
+    def do(self, input_, **kwargs):
+        if isinstance(input_, Response) or isinstance(input_, SelectorList):
+            res = input_.css(self._path)
+        elif isinstance(input_, basestring):
+            res = Selector(text=input_).css(self._path)
         else:
             raise Exception(__name__ + ' unknow type of argument' + str(type(input_)))
 
@@ -187,12 +229,14 @@ class TimeProcedure(ListableProcedure):
 class LinkProcedure(BaseProcedure):
     """
     基于scrapy的LxmlLinkExtractor的链接提取器
-    link xpath
+    link xpath css
     xpath string|array  参考LxmlLinkExtractor的restrict_xpaths
+    css string|array  参考LxmlLinkExtractor的restrict_css
     """
     def __init__(self, *args):
         xpath = args[0]
-        self._extractor = LxmlLinkExtractor(restrict_xpaths=xpath)
+        css = len(args) >= 2 and args[1] or None
+        self._extractor = LxmlLinkExtractor(restrict_xpaths=xpath, restrict_css=css)
 
     def do(self, input_, **kwargs):
         if isinstance(input_, Response):
@@ -294,6 +338,23 @@ class SubstrProcedure(ListableProcedure):
             return input_[self._start:]
 
 
+class SliceProcedure(BaseProcedure):
+    """
+    参考python的切片
+    slice start [end]
+    """
+    def __init__(self, *args):
+        self._start = args[0]
+        self._end = None
+        if len(args) > 1:
+            self._end = args[1]
+
+    def one(self, input_, **kwargs):
+        if self._end != None:
+            return input_[self._start:self._end]
+        else:
+            return input_[self._start:]
+
 class DefaultProcedure(BaseProcedure):
     """
     如果输入为None，则输入默认值，如果不为空，则输出输入值
@@ -348,6 +409,23 @@ class JsonProcedure(BaseProcedure):
         return s
 
 
+class ListElementProcedure(BaseProcedure):
+    """
+    返回数组的某个元素
+    list_element index
+    index 下标
+    """
+    def __init__(self, *args):
+        self.index = int(args[0])
+
+    def do(self, input_, **kwargs):
+        if not isinstance(input_, list):
+            raise Exception("list_element needs 'list' type input, but %s given" % (str(type(input_))))
+        if self.index < 0 or self.index >= len(input_):
+            raise Exception("index %d out range" % self.index)
+        return input_[self.index]
+
+
 class URLProcedure():
     """
     特珠Procedure，获取当前response的url
@@ -358,15 +436,18 @@ class URLProcedure():
 
 procedure_map = {
     'const': ConstProcedure,
+    'css': CssProcedure,
     'default': DefaultProcedure,
     'eval': EvalProcedure,
     'join': JoinProcedure,
     'json': JsonProcedure,
     'link': LinkProcedure,
+    'list_element': ListElementProcedure,
     'meta': MetaProcedure,
     're': ReProcedure,
     'replace': ReplaceProcedure,
     'resub': ResubProcedure,
+    'slice': SliceProcedure,
     'substr': SubstrProcedure,
     'time': TimeProcedure,
     'url_join': UrlJoinProcedure,
