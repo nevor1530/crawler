@@ -56,7 +56,7 @@ class BaseProcedure():
             return self.do(input_, **kwargs)
 
     def do(self, input_, **kwargs):
-        raise Exception('no explement')
+        raise Exception('no implementation')
 
 
 class ListableProcedure(BaseProcedure):
@@ -349,7 +349,7 @@ class SliceProcedure(BaseProcedure):
         if len(args) > 1:
             self._end = args[1]
 
-    def one(self, input_, **kwargs):
+    def do(self, input_, **kwargs):
         if self._end != None:
             return input_[self._start:self._end]
         else:
