@@ -52,12 +52,13 @@ class ExtratorParser():
                 raise Exception('unkonw extractor %s' % conf['extends'])
 
             base_extractor = self.all_extractors[conf['extends']]
-            extractor.urls = base_extractor.urls
-            extractor.parsers = base_extractor.parsers
+            extractor.urls_procedures = base_extractor.urls_procedures
+            extractor.extractors = base_extractor.extractors
             extractor.entity = base_extractor.entity
             extractor.condition_procedures = base_extractor.condition_procedures
             extractor.last = base_extractor.last
             extractor.pager = base_extractor.pager
+            extractor.meta_procedures = base_extractor.meta_procedures
             extractor.webdriver = base_extractor.webdriver
             extractor.cur_webdriver = base_extractor.cur_webdriver
 

@@ -43,6 +43,9 @@ class ZeusSpider(Spider):
         # 指定单个要爬的入口地址，可用于测试，或者单独爬取某个页面
         self.specify_url = kwargs.get('specify_url', None)
 
+        # 指定抓取页面数
+        self.max_pages = kwargs.get('max_pages', None)
+
     def start_requests(self):
         """
         start job from here
@@ -136,7 +139,10 @@ class ZeusSpider(Spider):
             if extractor.pager:
                 e_pager = extractor.pager
                 cur_page = meta.get(META_PAGE, 1)
-                if 'max_pages' not in e_pager or cur_page < e_pager['max_pages']:
+                if self.max_pages and cur_page >= self.max_pages \
+                        or self.max_pages is None and 'max_pages' in e_pager and cur_page >= e_pager['max_pages']:
+                    pass
+                else:
                     cur_page += 1
                     url = e_pager['next_url'].extract(response, response=response)
                     url = first_url(url)

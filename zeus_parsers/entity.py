@@ -6,6 +6,9 @@ import logging
 from procedure import parse_procedures
 
 
+logger = logging.getLogger(__file__)
+
+
 def is_empty_list(list_):
     if not list_:
         return True
@@ -55,9 +58,9 @@ class Entity():
                 res = procedures.extract(res, **kwargs)
                 results[name] = res
                 if res is None or isinstance(res, list) and is_empty_list(res):
-                    logging.warn('entity "%s" attr "%s" parse empty in "%s"' % (self.name, name, url))
+                    logger.warn('entity "%s" attr "%s" parse empty in "%s"' % (self.name, name, url))
             except:
-                logging.exception('entity "%s" attr "%s" parse error in "%s"' %
+                logger.exception('entity "%s" attr "%s" parse error in "%s"' %
                             (self.name, name, url))
         return results
 
