@@ -4,7 +4,7 @@ from selenium.webdriver.remote.webdriver import WebDriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from scrapy import signals
 from scrapy.http import HtmlResponse
-from scrapy.xlib.pydispatch import dispatcher
+from pydispatch import dispatcher
 from scrapy.exceptions import IgnoreRequest
 
 import logging
