@@ -22,6 +22,9 @@ from zeus_parsers.jsonex import loads as jsonloads
 import copy
 
 
+logger = logging.getLogger(__file__)
+
+
 class ZeusSpider(Spider):
     name = 'zeus'
 
@@ -35,24 +38,35 @@ class ZeusSpider(Spider):
         elif config:
             jconfig = jsonloads(config)
         else:
-            self.log('config_file or config is expected', level=logging.CRITICAL)
+            logger.critical('config_file or config is expected')
             raise Exception('config_file or config is expected')
 
         self.template = config_parse(jconfig)
 
         # 指定单个要爬的入口地址，可用于测试，或者单独爬取某个页面
-        self.specify_url = kwargs.get('specify_url', None)
+        self.test_url = kwargs.get('test_url', None)
 
         # 指定抓取页面数
         self.max_pages = kwargs.get('max_pages', None)
+        self.max_pages = int(self.max_pages) if self.max_pages is not None else None
+
+        # entity 测试
+        self.test_entity = kwargs.get('test_entity', None)
 
     def start_requests(self):
         """
         start job from here
         """
+        if self.test_entity:
+            meta = dict()
+            meta[META_ENTITY_CONFIG] = self.template.entities[self.test_entity]
+            meta[META_URL] = self.test_url
+            yield Request(url=self.test_url, meta=meta, callback=self.entity_test)
+            return
+
         for crawler in self.template.crawlers:
             for url in crawler.sites:
-                if self.specify_url and self.specify_url != url:
+                if self.test_url and self.test_url != url:
                     continue
                 meta = {
                     META_EXTRACTORS: crawler.extrators,
@@ -63,7 +77,7 @@ class ZeusSpider(Spider):
                     for key, procedures in crawler.meta_procedures.items():
                         vars[key] = procedures.extract(None)
                     meta[META_VARS] = vars
-                self.log('crawl %s' % url, level=logging.INFO)
+                logger.info('crawl %s' % url)
                 yield Request(url=url, meta=meta, callback=self.traversal)
 
     def traversal(self, response):
@@ -78,7 +92,7 @@ class ZeusSpider(Spider):
         for extractor in extractors:
             # 先判断condition
             if extractor.condition_procedures and not extractor.condition_procedures.extract(response, response=response):
-                self.log('condition fell in %s' % response.url, level=logging.DEBUG)
+                logger.debug('condition fell in %s' % response.url)
                 continue
 
             # 判断是否需要webdriver和是否用了webdriver，如果需要，但没用，则重新请求一次
@@ -86,7 +100,7 @@ class ZeusSpider(Spider):
                 next_meta = meta.copy()
                 next_meta['webdriver'] = extractor.cur_webdriver
                 next_meta[META_EXTRACTORS] = [extractor]
-                self.log('re-request the page %s' % response.url, level=logging.DEBUG)
+                logger.debug('re-request the page %s' % response.url)
                 yield Request(url=response.url, meta=next_meta, callback=self.traversal, dont_filter=True)
             else:
                 # 如果有entity配置，则先解析item
@@ -139,6 +153,7 @@ class ZeusSpider(Spider):
             if extractor.pager:
                 e_pager = extractor.pager
                 cur_page = meta.get(META_PAGE, 1)
+                logger.warning('============== cur_page %d, self.max_pages %d' % (cur_page, self.max_pages))
                 if self.max_pages and cur_page >= self.max_pages \
                         or self.max_pages is None and 'max_pages' in e_pager and cur_page >= e_pager['max_pages']:
                     pass
@@ -156,6 +171,27 @@ class ZeusSpider(Spider):
             if extractor.last:
                 break
 
+    def entity_test(self, response):
+        """
+        entity 测试
+        :param response:
+        :return:
+        """
+        meta = response.meta
+        entity_config = meta[META_ENTITY_CONFIG]
+        item = self.parse_entity(entity_config, response, response=response, url=response.url)
+        if entity_config.pager:
+            # 正文分页
+            url = entity_config.pager['next_url'].extract(response, response=response)
+            url = first_url(url)
+            if url:
+                next_meta = meta.copy()
+                next_meta[META_ENTITY] = item
+                next_meta[META_URL] = response.url
+                next_meta[META_ENTITY_CONFIG] = entity_config
+                yield Request(url=url, meta=next_meta, callback=self.pages_entity)
+        else:
+            yield make_item(item)
 
     def pages_entity(self, response):
         """
@@ -166,7 +202,7 @@ class ZeusSpider(Spider):
         meta = response.meta
         entity = meta[META_ENTITY]
         entity_config = meta[META_ENTITY_CONFIG]
-        entry_page = meta[META_ENTRY_PAGE]
+        entry_page = meta.get(META_ENTRY_PAGE, None)
 
         pager_attrs = entity_config.pager['pager_attrs']
         attrs = pager_attrs.keys()
@@ -212,7 +248,7 @@ class ZeusSpider(Spider):
         """
         for key, value in item.items():
             if value is None:
-                self.log('attr parse empty or error: entity "%s" attr "%s" in "%s"' % (entity.name, key, url), level=logging.WARNING)
+                logger.warning('attr parse empty or error: entity "%s" attr "%s" in "%s"' % (entity.name, key, url))
 
 
 def first_url(urls):

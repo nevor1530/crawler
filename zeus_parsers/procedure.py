@@ -258,7 +258,11 @@ class MetaProcedure(BaseProcedure):
     def do(self, input_, **kwargs):
         if not isinstance(input_, Response):
             raise Exception('meta procedure need response')
-        return input_.meta[META_VARS][self._key]
+        try:
+            value = input_.meta[META_VARS][self._key]
+        except:
+            value = None
+        return value
 
 
 class EvalProcedure(BaseProcedure):
@@ -393,7 +397,7 @@ class JsonProcedure(BaseProcedure):
             input_ = input_.body_as_unicode()
         if isinstance(input_, basestring):
             input_ = self.remove_comment(input_)
-            input_ = json.loads(input_)
+        input_ = json.loads(input_)
         res = [match.value for match in self.jsonpath.find(input_)]
         if res:
             if not self._return_multi:
