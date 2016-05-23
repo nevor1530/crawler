@@ -22,7 +22,7 @@ from zeus_parsers.jsonex import loads as jsonloads
 import copy
 
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 class ZeusSpider(Spider):
@@ -190,8 +190,10 @@ class ZeusSpider(Spider):
                 next_meta[META_URL] = response.url
                 next_meta[META_ENTITY_CONFIG] = entity_config
                 yield Request(url=url, meta=next_meta, callback=self.pages_entity)
+            else:
+                yield make_item(response, item)
         else:
-            yield make_item(item)
+            yield make_item(response, item)
 
     def pages_entity(self, response):
         """

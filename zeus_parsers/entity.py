@@ -6,7 +6,7 @@ import logging
 from procedure import parse_procedures
 
 
-logger = logging.getLogger(__file__)
+logger = logging.getLogger(__name__)
 
 
 def is_empty_list(list_):
