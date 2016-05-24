@@ -50,6 +50,9 @@ class ZeusSpider(Spider):
         self.max_pages = kwargs.get('max_pages', None)
         self.max_pages = int(self.max_pages) if self.max_pages is not None else None
 
+        # extractor 测试
+        self.test_extractor = kwargs.get('test_extractor', None)
+
         # entity 测试
         self.test_entity = kwargs.get('test_entity', None)
 
@@ -57,6 +60,15 @@ class ZeusSpider(Spider):
         """
         start job from here
         """
+        if self.test_extractor:
+            if self.test_extractor not in self.template.extractors:
+                raise Exception('extractor "%s" not found' % self.test_extractor)
+            meta = dict()
+            meta[META_EXTRACTORS] = [self.template.extractors[self.test_extractor]]
+            meta[META_URL] = self.test_url
+            yield Request(url=self.test_url, meta=meta, callback=self.traversal)
+            return
+
         if self.test_entity:
             meta = dict()
             meta[META_ENTITY_CONFIG] = self.template.entities[self.test_entity]
@@ -86,7 +98,7 @@ class ZeusSpider(Spider):
 
         meta = response.meta
         extractors = meta[META_EXTRACTORS]
-        entry_page = meta[META_ENTRY_PAGE]
+        entry_page = meta.get(META_ENTRY_PAGE, "")
         pre_item = meta.get(META_ITEM, None)
 
         for extractor in extractors:
@@ -122,11 +134,14 @@ class ZeusSpider(Spider):
 
                 # 如果有需要合并的entity，则在此合并
                 if pre_item:
-                    item.update(pre_item)
+                    pre_item.update(item)
+                    item = pre_item
 
                 # 如果有下一级，则当前解析的entity不进入item pipeline，传给下一级
                 if extractor.urls_procedures:
                     urls = extractor.urls_procedures.extract(response, response=response)
+                    if urls and not isinstance(urls, list):
+                        urls = [urls]
                     if urls:
                         next_meta = {
                             META_EXTRACTORS: extractor.extractors,
@@ -135,6 +150,7 @@ class ZeusSpider(Spider):
                         # 如果当前有解析entity，则传到下一级
                         if item:
                             next_meta[META_ITEM] = item
+                            next_meta[META_URL] = response.url if META_URL not in meta else meta[META_URL]
                         if extractor.webdriver:
                             next_meta['webdriver'] = extractor.webdriver
                         if extractor.meta_procedures:

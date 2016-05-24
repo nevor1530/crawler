@@ -11,10 +11,14 @@ class Template():
     def __init__(self):
         self.name = None
         self.entities = None
+        self.extractors = None
         self.crawlers = None
 
     def get_entity(self, name):
-        return self.entities[name]
+        return None if self.entities is None else self.entities[name]
+
+    def get_extractor(self, name):
+        return None if self.extractors is None else self.extractors[name]
 
 
 class Crawler():
@@ -56,6 +60,7 @@ def parse(conf):
                 crawler.meta_procedures[key] = parse_procedures(values)
         crawlers.append(crawler)
     template.crawlers = crawlers
+    template.extractors = extrator_parser.all_extractors
 
     return template
 
