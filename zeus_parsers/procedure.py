@@ -10,9 +10,15 @@ from scrapy.selector import Selector
 from scrapy.linkextractors.lxmlhtml import LxmlLinkExtractor
 from scrapy.utils.response import get_base_url
 from scrapy.selector.unified import SelectorList
-from jsonpath_rw import parse as jsonpath_parse
+from jsonpath_rw_ext import parser as jsonpath_parser
 
 from constants import META_VARS
+import os
+import sys
+PARENT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.abspath(PARENT_DIR + '/../')
+sys.path.append(ROOT_DIR)
+import utils.unstrict_json as myjson
 
 
 def qualify_link(response, link):
@@ -376,7 +382,7 @@ class DefaultProcedure(BaseProcedure):
 
 class JsonProcedure(BaseProcedure):
     """
-    json解析，一个参数jsonpath,参考https://pypi.python.org/pypi/jsonpath-rw
+    json解析，一个参数jsonpath,参考https://pypi.python.org/pypi/jsonpath-rw, https://github.com/sileht/python-jsonpath-rw-ext
     json jsonpath [multi]
     jsonpath
     multi 是否返回数组，默认为false
@@ -387,7 +393,7 @@ class JsonProcedure(BaseProcedure):
 
     def __init__(self, *args):
         path = args[0]
-        self.jsonpath = jsonpath_parse(path)
+        self.jsonpath = jsonpath_parser.parse(path)
         self._return_multi = False
         if len(args) > 1 and args[1]:
             self._return_multi = args[1]
@@ -397,7 +403,11 @@ class JsonProcedure(BaseProcedure):
             input_ = input_.body_as_unicode()
         if isinstance(input_, basestring):
             input_ = self.remove_comment(input_)
-        input_ = json.loads(input_)
+        try:
+            input_ = json.loads(input_)
+        except:
+            # not legal json
+            input_ = myjson.loads(input_)
         res = [match.value for match in self.jsonpath.find(input_)]
         if res:
             if not self._return_multi:
