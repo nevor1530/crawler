@@ -19,6 +19,9 @@ NEWSPIDER_MODULE = 'zcrawler.spiders'
 #LOG_ENABLED = False
 LOG_LEVEL = 'DEBUG'
 
+ITEM_PIPELINES = {
+    #'zcrawler.item_pipeline.csv_pipeline.CSVPipeline': 300
+}
 
 DOWNLOADER_MIDDLEWARES = {
     'zcrawler.download_middlewares.selenium_grid_middleware.SeleniumGridMiddleware': 101
