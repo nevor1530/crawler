@@ -1,0 +1,65 @@
+{
+    "name": "39健康网",
+    "entities": [
+        {
+            "name": "entity1",
+            "attrs": {
+                "title": ["xpath", "//div[@class='art_box']/h1/text()"],
+                "content": [
+                    ["xpath", "//div[@id='contentText']/*"]
+                    //["join", ""]
+                ],
+                "image_urls": [
+                    ["xpath", "//div[@id='contentText']/descendant::img/@src", true],
+                    ["url_join"]
+                ],
+                "description": ["xpath", "//meta[@name='Description']/@content"],
+                //"source_name": [
+                    //["xpath", "//div[@class='art_info']/div[@class='date')]/descendant::text()", true],
+					//["join", ""],
+                    //["re", "(?<=\\d{4}-\\d{2}-\\d{2})[\u4e00-\u9fa5\\w]+"]
+                //],
+                //"source_url": ["const", ""],
+                "pub_time": [
+					["xpath", "//div[@class='date']/em[1]/text()"]
+				]
+                
+            },
+            "pager": {
+                "next_url": ["link", "//a[@class='nextpage']"],
+                "pager_attrs": {
+                    "image_urls": true,
+                    "content": "<br/>"
+                }
+            }
+        }
+    ],
+//scrapy crawl zeus -a config_file=zeus_templates/www.39.net.json -a test_entity=entity1 -a test_url=http://face.39.net/a/160312/4785244.html
+
+
+    "crawlers": {
+        "sites": [
+    
+			"http://face.39.net/mrhf/hfcs/index.html"
+			
+           
+        ],
+
+        "extractors": [
+            {
+                "name": "extractor_1",
+                "urls": [
+                    ["link", "//div[@class='listbox']/ul/li/span/a"]
+                ],
+                "extractors": [{
+                    "entity": "entity1"
+                }],
+                "pager": {
+                    "next_url": ["link", "//div[@class='list_page']/span/a[contains(text(), '\u4e0b\u4e00\u9875')]"],
+                    "max_pages": 2
+                }
+            }
+        ]
+    }
+}
+//scrapy crawl zeus -a config_file=zeus_templates/www.39.net.json -a test_url=http://face.39.net/mrhf/hfcs/index.html -s LOG_LEVEL=INFO

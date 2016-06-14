@@ -4,23 +4,23 @@
         {
             "name": "entity1",
             "attrs": {
-                "title": ["xpath", "//div[@class='qq_article']/div/h1/text()"],
+                "title": ["xpath", "//div[@class='qq_article']/div/h1/text()|//div[@id='C-Main-Article-QQ']/div/h1/text()"],
                 "content": [
-                    ["xpath", "//div[@class='Cnt-Main-Article-QQ']"],
-                    ["resub", "<script.*?(?:</script>|/>)", ""],
-                    ["resub", "<style.*?(?:</style>|/>)", ""],
-                    ["resub", "</?iframe.*?/?>", ""]
+                    ["xpath", "//div[@id='Cnt-Main-Article-QQ']"],
+                    ["resub", "<script[\\s\\S]*?(</script>|/>)", ""],
+                    ["resub", "<style[\\s\\S]*?(</style>|/>)", ""],
+                    ["resub", "</?iframe[\\s\\S]*?/?>", ""]
                 ],
                 "image_urls": [
-                    ["xpath", "//div[@class='Cnt-Main-Article-QQ']/descendant::img/@src", true],
+                    ["xpath", "//div[@id='Cnt-Main-Article-QQ']/descendant::img/@src", true],
                     ["url_join"]
                 ],
                 "description": ["xpath", "//meta[@name='Description']/@content"],
                 "source_name": [
-                    ["xpath", "//span[@class='a_source']/descendant::text()"]
+                    ["xpath", "//span[@bosszone='jgname']/descendant::text()"]
                 ],
                 "source_url": ["const", ""],
-                "pub_time": ["xpath", "//span[@class='a_time']/text()"],
+                "pub_time": ["xpath", "//span[@class='a_time']/text()|//span[@class='article-time']/text()"],
                 "abstraction": [
                     ["xpath", "//p[@class='titdd-Article']/descendant::text()", true],
                     ["join", ""],
@@ -35,8 +35,7 @@
             "name": "imglist",
             "attrs": {
                 "image_urls": [
-                    //["json", "Children[0].Children[1].Children[*].Children[2].Children[0].Content"]
-                    ["json", "Name"]
+                    ["json", "$..Children[?Name='bigimgurl'].Children[0].Content", true]
                 ]
             }
         },
@@ -50,39 +49,120 @@
         }
     ],
 
-    "crawlers": {
-        "sites": [
-            "http://ent.qq.com/star/"
-        ],
+    "crawlers": [
+        {
+            "sites": [
+                "http://ent.qq.com/star/"
+            ],
 
-        "extractors": [
-            {
-                "name": "extractor_1",
-                "urls": [
-                    ["link", "//h2[@class='title']/a"]
-                ],
-                "extractors": [
-                    {
-                        "condition": ["xpath", "//div[@id='picWrap']"],
-                        "last": true
-                    },
-                    // gallery
-                    {
-                        "condition": ["xpath", "//div[@id='galleryList']"],
-                        "last": true,
-                        "entity": "gallery_entity",
-                        "cur_webdriver": {
-                            "name": "selenium_grid",
-                            "module": "www_qq_com_star"
+            "extractors": [
+                {
+                    "name": "extractor_1",
+                    "urls": [
+                        ["link", "//h2[@class='title']/a"]
+                    ],
+                    "extractors": [
+                        {
+                            "condition": ["xpath", "//div[@id='picWrap']"],
+                            "last": true
+                        },
+                        // gallery
+                        {
+                            "name": "gallery_extractor",
+                            "condition": ["xpath", "//div[@id='galleryList']"],
+                            "last": true,
+                            "entity": "entity1",
+                            "urls": [
+                                ["URL"],
+                                ["resub", "\\.[^\\.]+$", ".hdPic.js"]
+                            ],
+                            "extractors": {
+                                "entity": "imglist"
+                            }
+                        },
+                        {
+                            // 根据正文判断是否采用这个模板
+                            "condition": ["xpath", "//div[@class='Cnt-Main-Article-QQ']"],
+                            "entity": "entity1"
                         }
+                    ]
+                }
+            ]
+        },
+        {
+            "sites": [
+                "http://fashion.qq.com/vogue/trends/trends_list.htm"
+            ],
+            "extractors": [
+                {
+                    "name": "list_zone",
+                    "urls": ["link", "//div[@id='listZone']/li/div[2]/h2"],
+                    "extractors": {"entity": "entity1"},
+                    "pager": {
+                        "next_url": [
+                            ["meta", "page"],
+                            ["default", 1],
+                            ["eval", "%d + 1"],
+                            ["eval", "'http://fashion.qq.com/c/trends_%d.htm'"]
+                        ],
+                        "max_pages": 1
                     },
-                    {
-                        // 根据正文判断是否采用这个模板
-                        "condition": ["xpath", "//div[@class='Cnt-Main-Article-QQ']"]
-                        //"entity": "entity1"
+                    "meta": {
+                        "page": [
+                            ["meta", "page"],
+                            ["eval", "%d + 1"]
+                        ]
                     }
-                ]
-            }
-        ]
-    }
+                }
+            ]
+        },
+        {
+            "sites": ["http://fashion.qq.com/beauty/skincare/skincare_list.htm"],
+            "extractors": [
+                {
+                    "extends": "list_zone",
+                    "extractors": [
+                        {
+                            "condition": ["xpath", "//div[@id='mod_barrage']"],
+                            "last": true
+                        },
+                        {
+                            "entity": "entity1"
+                        }
+                    ],
+                    "pager": {
+                        "next_url": [
+                            ["meta", "page"],
+                            ["default", 1],
+                            ["eval", "%d + 1"],
+                            ["eval", "'http://fashion.qq.com/c/hufu3list_%d.htm'"]
+                        ],
+                        "max_pages": 1
+                    }
+                }
+            ]
+        },
+        {
+            "sites": ["http://fashion.qq.com/beauty/newarrivals/newarrivals_list.htm"],
+            "extractors": [
+                {
+                    "extends": "list_zone",
+                    "extractors": [
+                        {
+                            "entity": "entity1"
+                        }
+                    ],
+                    "pager": {
+                        "next_url": [
+                            ["meta", "page"],
+                            ["default", 1],
+                            ["eval", "%d + 1"],
+                            ["eval", "'http://fashion.qq.com/c/xxh3list_%d.htm'"]
+                        ],
+                        "max_pages": 1
+                    }
+                }
+            ]
+        }
+    ]
 }

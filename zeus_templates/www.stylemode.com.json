@@ -1,0 +1,55 @@
+{
+    "name": "STYLEMODE",
+    "entities": [
+        {
+            "name": "entity1",
+            "attrs": {
+                "title": ["xpath", "//article/h1[1]/text()"],
+                "content": [
+                    ["xpath", "//div[@id='article-content']/*", true],
+                    ["slice", 0, -1],
+                    ["join", ""]
+                ],
+                "image_urls": ["xpath", "//div[@id='article-content']//descendant::img/@src", true],
+                "source_name": [
+                    ["css", ".article-info > span:nth-child(3)::text"],
+                    ["substr", 3]
+                ],
+                "source_url": ["const", ""],
+                "pub_time": ["css", ".article-info > span:nth-child(2)::text"],
+                "abstraction": ["const", ""]
+            },
+            "pager": {
+                "next_url": [
+                    ["css", ".pager", false, true],
+                    ["xpath", "//a[contains(., '下一页')]/@href"]
+                ],
+                "pager_attrs": {
+                    "content": "<br/>",
+                    "image_urls": true
+                }
+            }
+        }
+    ],
+    "crawlers": [
+        {
+            "sites": [
+                "http://www.stylemode.com/fashion/choiceness/index-0-1-0-0-1.html"
+            ],
+            "extractors": [
+                {
+                    "urls": ["link", null, "ul.list-content > li > a:first-child"],
+                    "extractors": [
+                        {
+                            "entity": "entity1"
+                        }
+                    ],
+                    "pager": {
+                        "next_url": ["link", null, "a.icon-pager-next"],
+                        "max_pages": 2
+                    }
+                }
+            ]
+        }
+    ]
+}
