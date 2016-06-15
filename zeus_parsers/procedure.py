@@ -156,21 +156,32 @@ class CssProcedure(BaseProcedure):
 
 class ReProcedure(ListableProcedure):
     """
-    正则表达式提取
-    re pattern
+    正则表达式提取, 如果指定一个group，则返回单元素值，如果指定多个group，则返回数组
+    re pattern group1 group2 ...
     """
     def __init__(self, *args):
-        if len(args) != 1:
+        if len(args) < 1:
             raise Exception('re procedure paraments error')
         self._reg = args[0]
-        pass
+        if len(args) > 1:
+            self._groups = args[1:]
+        else:
+            self._groups = None
 
     def one(self, string, **kwargs):
         if not string:
             return None
         match = re.search(self._reg, string)
         if match:
-            return match.group(0)
+            if self._groups:
+                if len(self._groups) == 1:
+                    # only one
+                    return match.group(self._groups[0])
+                else:
+                    # multiple groups
+                    return [match.group(i) for i in self._groups]
+            else:
+                return match.group(0)
         else:
             return None
 
@@ -271,7 +282,7 @@ class MetaProcedure(BaseProcedure):
         return value
 
 
-class EvalProcedure(BaseProcedure):
+class EvalProcedure(ListableProcedure):
     """
     参考python eval用法
     eval exp
@@ -281,7 +292,7 @@ class EvalProcedure(BaseProcedure):
     def __init__(self, *args):
         self._exp = args[0]
 
-    def do(self, input_, **kwargs):
+    def one(self, input_, **kwargs):
         return eval(self._exp % input_)
 
 
@@ -448,6 +459,20 @@ class URLProcedure():
     def run(self, res, **kwargs):
         return res.url
 
+
+class HTMLProcedure():
+    """
+    特珠Procedure，获取当前response的html源码字符串
+    HTML
+    """
+    def run(self, res, **kwargs):
+        res = kwargs.get('response', None)
+        if res:
+            return res.body_as_unicode()
+        else:
+            raise Exception("response expected")
+
+
 procedure_map = {
     'const': ConstProcedure,
     'css': CssProcedure,
@@ -466,7 +491,8 @@ procedure_map = {
     'time': TimeProcedure,
     'url_join': UrlJoinProcedure,
     'xpath': XpathProcedure,
-    'URL': URLProcedure
+    'URL': URLProcedure,
+    'HTML': HTMLProcedure
 }
 
 if __name__ == '__main__':
