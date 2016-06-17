@@ -473,7 +473,17 @@ class HTMLProcedure():
             raise Exception("response expected")
 
 
+class BoolProcedure():
+    """
+    转成bool型
+    bool
+    """
+    def run(self, input_, **kwargs):
+        return bool(input_)
+
+
 procedure_map = {
+    'bool': BoolProcedure,
     'const': ConstProcedure,
     'css': CssProcedure,
     'default': DefaultProcedure,
