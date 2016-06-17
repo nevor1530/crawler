@@ -72,6 +72,9 @@ class ListableProcedure(BaseProcedure):
         else:
             return self.one(input_, **kwargs)
 
+    def one(self, input_, **kwargs):
+        raise Exception('no implementation')
+
 
 class XpathProcedure(BaseProcedure):
     """
@@ -460,12 +463,12 @@ class URLProcedure():
         return res.url
 
 
-class HTMLProcedure():
+class HTMLProcedure(BaseProcedure):
     """
     特珠Procedure，获取当前response的html源码字符串
     HTML
     """
-    def run(self, res, **kwargs):
+    def do(self, res, **kwargs):
         res = kwargs.get('response', None)
         if res:
             return res.body_as_unicode()
@@ -473,12 +476,12 @@ class HTMLProcedure():
             raise Exception("response expected")
 
 
-class BoolProcedure():
+class BoolProcedure(ListableProcedure):
     """
     转成bool型
     bool
     """
-    def run(self, input_, **kwargs):
+    def one(self, input_, **kwargs):
         return bool(input_)
 
 
