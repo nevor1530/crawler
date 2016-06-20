@@ -476,12 +476,12 @@ class HTMLProcedure(BaseProcedure):
             raise Exception("response expected")
 
 
-class BoolProcedure(ListableProcedure):
+class BoolProcedure(BaseProcedure):
     """
     转成bool型
     bool
     """
-    def one(self, input_, **kwargs):
+    def run(self, input_, **kwargs):
         return bool(input_)
 
 
