@@ -11,6 +11,8 @@ from scrapy.utils.response import get_base_url
 from urlparse import urljoin
 
 import sys
+reload(sys)
+sys.setdefaultencoding('utf-8')
 import os
 PARENT_DIR = os.path.dirname(os.path.abspath(__file__))
 ROOT_DIR = os.path.abspath(PARENT_DIR + '/../../')
@@ -169,7 +171,6 @@ class ZeusSpider(Spider):
             if extractor.pager:
                 e_pager = extractor.pager
                 cur_page = meta.get(META_PAGE, 1)
-                logger.warning('============== cur_page %d, self.max_pages %d' % (cur_page, self.max_pages))
                 if self.max_pages and cur_page >= self.max_pages \
                         or self.max_pages is None and 'max_pages' in e_pager and cur_page >= e_pager['max_pages']:
                     pass
