@@ -236,7 +236,7 @@ class TimeProcedure(ListableProcedure):
         if len(args) > 1:
             self._output_pattern = args[1]
 
-    def one(self, s):
+    def one(self, s, **kwargs):
         ret = time.strptime(s, self._format_pattern)
         if self._output_pattern:
             ret = time.strftime(self._output_pattern, ret)
